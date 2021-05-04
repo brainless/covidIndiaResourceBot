@@ -1,0 +1,49 @@
+---
+- name: Pulling from git and starting the gunicorn
+
+  # Specify the hosts you want to target
+  hosts: webserver
+
+  remote_user: team
+
+  vars:
+    projects_root: /home/team
+    project_repo_url: git@github.com:brainless/covidIndiaResourceBot.git
+    python_path: /usr/bin/python3
+    project_name: "cirb"
+    service_name: "cirb"
+    build_folder_owner: team
+    build_folder_group: "www-data"
+
+  tasks:
+    - name: Update project repo
+      git:
+        repo: "{{ project_repo_url }}"
+        accept_hostkey: yes
+        dest: "{{ projects_root }}/{{ project_name }}"
+        version: main
+
+    #    - name: Update project repo
+    #      git:
+    #        repo: "{{ project_repo_url }}"
+    #        accept_hostkey: yes
+    #        dest: "{{ projects_root }}/{{ project_name }}"
+    #        version: <use-different-branch-as-needed>
+
+    - name: Install/update Python requirements for backend
+      pip:
+        requirements: "{{ projects_root }}/{{ project_name }}/requirements.txt"
+        chdir: "{{ projects_root }}/{{ project_name }}"
+        virtualenv: "{{ projects_root }}/{{ project_name }}/.venv"
+
+    #    - name: Run migrations for database
+    #      command:
+    #        chdir: "{{ projects_root }}/{{ project_name }}"
+    #        cmd: "{{ projects_root }}/{{ project_name }}/.venv/bin/python migrations.py upgrade"
+
+    - name: Restart gunicorn server
+      become: yes
+      become_user: root
+      systemd:
+        name: "{{ service_name }}"
+        state: restarted

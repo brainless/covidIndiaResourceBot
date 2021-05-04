@@ -1,0 +1,72 @@
+---
+- name: Setup project with Git, copy configuration files, run app server
+
+  # Specify the hosts you want to target
+  hosts: webserver
+
+  remote_user: team
+
+  vars:
+    projects_root: /home/team
+    project_repo_url: git@github.com:brainless/covidIndiaResourceBot.git
+    python_path: /usr/bin/python3
+    system_packages: ["git"]
+    project_name: "cirb"
+    service_name: "cirb"
+    build_folder_owner: team
+    build_folder_group: "www-data"
+    nginx_config_files: ["cirb_dwata_com.conf"]
+
+  tasks:
+    - name: Install required system packages
+      become: yes
+      become_user: root
+      apt: name={{ system_packages }} state=latest
+
+    - name: Create Projects directory
+      file:
+        path: "{{ projects_root }}"
+        state: directory
+
+    - name: Clone project repo
+      git:
+        repo: "{{ project_repo_url }}"
+        accept_hostkey: yes
+        dest: "{{ projects_root }}/{{ project_name }}"
+        version: main
+
+    - name: Install/update Python requirements for backend
+      pip:
+        requirements: "{{ projects_root }}/{{ project_name }}/requirements.txt"
+        chdir: "{{ projects_root }}/{{ project_name }}"
+        virtualenv: "{{ projects_root }}/{{ project_name }}/.venv"
+        virtualenv_command: "python3 -m virtualenv"
+
+    - name: Copy gunicorn config files
+      copy:
+        src: "{{ item }}"
+        dest: "/etc/systemd/system/"
+        remote_src: yes
+      with_items:
+        - "{{ projects_root }}/{{ project_name }}/system/gunicorn/{{ service_name }}.service"
+        - "{{ projects_root }}/{{ project_name }}/system/gunicorn/{{ service_name }}.socket"
+      become: yes
+      become_user: "root"
+
+    - name: Copy nginx config files
+      copy:
+        src: "{{ projects_root }}/{{ project_name }}/system/nginx/{{ item }}"
+        dest: "/etc/nginx/sites-available/"
+        remote_src: yes
+      with_items: "{{ nginx_config_files }}"
+      become: yes
+      become_user: "root"
+
+    - name: Symlink nginx config files to sites-enabled
+      file:
+        src: "/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-enabled/{{ item }}"
+        state: link
+      with_items: "{{ nginx_config_files }}"
+      become: yes
+      become_user: "root"
