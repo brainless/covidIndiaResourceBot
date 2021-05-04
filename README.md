@@ -1,4 +1,5 @@
-# covidIndiaResourceBot
+# Covid-19 India Resource Bot (cirb)
+`covidIndiaResourceBot`
 
 ### API backend to generate contextual conversations for chats with folks looking for resources in the Covid-19 crisis in India
 
@@ -8,12 +9,13 @@ This is a simple Python based API that generates texts depending on the context 
 The API uses the current user's phone number as the identifier at all times.
 
 API base URL: `https://cirb.dwata.com/api/1`
-Byt default this current API is versioned just in case we introduce any breaking changes.
+
+_Note_: This current API is versioned in case we introduce any breaking changes for other consumers.
 
 ## API Request
 The typical API request would look like:
 
-`HTTP POST`
+`HTTP POST /api/1/chat`
 ```json
 {
   "phone": "+911234512345",
