@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from utils.cache import get_redis
 # from utils.sentry import sentry_init
+from utils.config import settings
 from apps.chat.handlers import chat_router
 
 
@@ -9,7 +10,7 @@ origins = [
     "http://localhost:3000"
 ]
 
-app = FastAPI()
+app = FastAPI(root_path=settings.root_path)
 
 
 @app.on_event("startup")

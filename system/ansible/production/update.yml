@@ -23,23 +23,11 @@
         dest: "{{ projects_root }}/{{ project_name }}"
         version: main
 
-    #    - name: Update project repo
-    #      git:
-    #        repo: "{{ project_repo_url }}"
-    #        accept_hostkey: yes
-    #        dest: "{{ projects_root }}/{{ project_name }}"
-    #        version: <use-different-branch-as-needed>
-
     - name: Install/update Python requirements for backend
       pip:
         requirements: "{{ projects_root }}/{{ project_name }}/requirements.txt"
         chdir: "{{ projects_root }}/{{ project_name }}"
         virtualenv: "{{ projects_root }}/{{ project_name }}/.venv"
-
-    #    - name: Run migrations for database
-    #      command:
-    #        chdir: "{{ projects_root }}/{{ project_name }}"
-    #        cmd: "{{ projects_root }}/{{ project_name }}/.venv/bin/python migrations.py upgrade"
 
     - name: Restart gunicorn server
       become: yes

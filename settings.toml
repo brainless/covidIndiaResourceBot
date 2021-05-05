@@ -1,2 +1,3 @@
 [default]
 redis_host = "localhost"
+root_path = ""
