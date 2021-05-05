@@ -24,6 +24,7 @@ The typical API request would look like:
   "created_at": "2021-05-03T13:56:20+00:00"
 }
 ```
+Please refer to `ChatIn` **Schema** in [docs](https://cirb.dwata.com/api/1/docs).
 
 All the fields are self-explanatory. Here `created_by` is an enumeration of `["user", "operator"]`.
 
@@ -36,9 +37,12 @@ The API response would itself be a JSON payload like:
 {
   "phone": "+911234512345",
   "message": "Sure, can you please tell me what is your city?",
-  "tags": ["oxygen"]
+  "tags": ["oxygen"],
+  "team": "Oxygen",
+  "close_chat": false
 }
 ```
+Please refer to `ChatOut` **Schema** in [docs](https://cirb.dwata.com/api/1/docs).
 
 ## Ideas
 The API tries to stay away from the context that the consumer of the API may have, for example ID of operator or other tags that the consumer (DelightChat UI) may have added.

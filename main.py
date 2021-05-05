@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
 from utils.cache import get_redis
-# from utils.sentry import sentry_init
 from utils.config import settings
 from apps.chat.handlers import chat_router
 
