@@ -32,24 +32,35 @@ def get_next_message(
                 message_parser(current_message, **step_config["variables"])
                 # Found a valid response, move the step to success
                 is_successful = True
-                chat_state.current_step = step_config["success_state"]
                 break
             except ValueError:
                 # We do not do anything when any one parser fails, just ignore and try next
                 pass
 
-        if not is_successful:
+        can_move_step = False
+        if is_successful:
+            if "success_state" in step_config:
+                chat_state.current_step = step_config["success_state"]
+                can_move_step = True
+            else:
+                response_message = None
+        else:
             # We tried all parsers, none worked so we are in failure step of the current step
-            chat_state.current_step = step_config["failure_state"]
+            if "failure_state" in step_config:
+                chat_state.current_step = step_config["failure_state"]
+                can_move_step = True
+            else:
+                response_message = None
 
-        # Let's start over, but with the success or failed step
-        # This will simply send out the message
-        chat_state.has_sent_current_step_message = False
-        response_message, chat_state = get_next_message(
-            config=config,
-            current_message=None,
-            chat_state=chat_state
-        )
+        if can_move_step:
+            # Let's start over, but with the success or failed step
+            # This will simply send out the message
+            chat_state.has_sent_current_step_message = False
+            response_message, chat_state = get_next_message(
+                config=config,
+                current_message=None,
+                chat_state=chat_state
+            )
     else:
         # We have not sent out the message configured for this current step, let's send it out
         response_message = step_config["message"]
