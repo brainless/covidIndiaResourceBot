@@ -29,8 +29,8 @@ class ChatState(Cacheable):
         self.tried_this_step = 0
         self.last_response_at = None
 
-    def dumps(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+    def to_dict(self):
+        return self.__dict__
 
     def loads(self, data: str):
         data = json.loads(data)
@@ -57,13 +57,16 @@ async def get_chat_state_and_variables(
         chat_state.loads(chat_state_cached)
 
         if "variables" in chat_state_dict:
-            chat_variables.load(chat_state_dict["variables"])
+            chat_variables.from_dict(chat_state_dict["variables"])
 
     return chat_state, chat_variables
 
 
-async def set_chat_state(phone_number: str, chat_state: ChatState, cache: redis):
-    await cache.set(phone_number, chat_state.dumps())
+async def set_chat_state(phone_number: str, chat_state: ChatState, chat_variables: Cacheable, cache: redis):
+    await cache.set(phone_number, json.dumps({
+        **chat_state.to_dict(),
+        "variables": chat_variables.to_dict()
+    }))
 
 
 async def delete_chat_state(phone_number: str, cache: redis):

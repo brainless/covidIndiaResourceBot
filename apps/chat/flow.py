@@ -47,15 +47,15 @@ def get_next_message(
 
         can_move_step = False
         if is_successful:
-            if "success_state" in step_config:
-                chat_state.current_step = step_config["success_state"]
+            if "success_step" in step_config:
+                chat_state.current_step = step_config["success_step"]
                 can_move_step = True
             else:
                 response_message = None
         else:
             # We tried all parsers, none worked so we are in failure step of the current step
-            if "failure_state" in step_config:
-                chat_state.current_step = step_config["failure_state"]
+            if "failure_step" in step_config:
+                chat_state.current_step = step_config["failure_step"]
                 can_move_step = True
             else:
                 response_message = None
@@ -74,9 +74,11 @@ def get_next_message(
     else:
         # We have not sent out the message configured for this current step, let's send it out
         response_message = step_config["message"]
+        """
         if "max_tries" in step_config:
             if chat_state.tried_this_step >= step_config["max_tries"]:
                 response_message = None
+        """
         chat_state.has_sent_current_step_message = True
         chat_state.tried_this_step = chat_state.tried_this_step + 1
 

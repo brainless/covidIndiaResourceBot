@@ -47,7 +47,7 @@ async def handle_incoming_chat(
         chat_variables=chat_variables
     )
     updated_chat_state.last_response_at = datetime.utcnow()
-    bg_tasks.add_task(set_chat_state, data.phone, updated_chat_state, cache)
+    bg_tasks.add_task(set_chat_state, data.phone, updated_chat_state, chat_variables, cache)
 
     return {
         "phone": data.phone,

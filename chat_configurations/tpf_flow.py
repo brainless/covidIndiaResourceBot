@@ -52,7 +52,7 @@ resources = [
 
 
 def get_resources_list():
-    return "\n".join(["{} {}".format(index, x) for index, x in enumerate(resources)])
+    return "\n".join(["{} {}".format(index + 1, x) for index, x in enumerate(resources)])
 
 
 welcome_message = """Hey, thank you for reaching. Can you please tell me what you are looking for from below options?
@@ -70,34 +70,45 @@ Could you also please tell me which city or region the patient is?
 spo2_message = """And what is the SPO2 level?
 """
 
+spo2_failure_message = """Sorry I could not understand.
+The SPO2 is the Oxygen saturation level as provided by the Doctor.
+Can you please share the SPO2 number?
+"""
+
 flow_config = {
     "steps": {
         "welcome": {
             "message": welcome_message,
             "allowed_parsers": [parsers.match_response_in_list, parsers.match_response_code_in_list],
-            "success_state": "city",
-            "failure_state": "welcome_failure",
+            "success_step": "city",
+            "failure_step": "welcome_failure",
             "parser_parameters": {
                 "allowed_responses": resources
             },
-            "parser_output_handler": ChatVariables.store_welcome_response
+            "parser_output_handler": ChatVariables.store_welcome_response,
+            "max_tries": 3,
         },
         "welcome_failure": {
             "inherit_step": "welcome",
             "message": "Please select a valid option. Eg. reply 2 for Ambulances.",
-            "max_tries": 3,
         },
         "city": {
             "message": city_message,
             "allowed_parsers": [parsers.match_response_as_place_name_in_india],
-            "success_state": "spo2",
-            "failure_state": "spo2",
+            "success_step": "spo2",
+            "failure_step": "spo2",
+            "max_tries": 3,
         },
         "spo2": {
             "message": spo2_message,
             "allowed_parsers": [parsers.match_response_as_spo2_level],
             "parser_output_handler": ChatVariables.store_spo2_response,
-            "failure_state": "spo2",
+            "failure_step": "spo2_failure",
+            "max_tries": 2,
+        },
+        "spo2_failure": {
+            "inherit_step": "spo2",
+            "message": spo2_failure_message
         }
     },
     "chat_variables_class": ChatVariables,
