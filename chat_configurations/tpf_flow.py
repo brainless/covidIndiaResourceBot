@@ -19,11 +19,18 @@ class ChatVariables(Cacheable):
         self.tags = []
 
     @classmethod
-    def parse_welcome_response(cls, current_variables, parsed_response):
+    def store_welcome_response(cls, current_variables: "ChatVariables", parsed_response):
         if cls.__name__ == "ChatVariables":
             current_variables.looking_for = parsed_response
             current_variables.team = parsed_response
             current_variables.tags.append(parsed_response)
+        return current_variables
+
+    @classmethod
+    def store_spo2_response(cls, current_variables: "ChatVariables", parsed_response):
+        if cls.__name__ == "ChatVariables":
+            current_variables.spo2_level = parsed_response
+            current_variables.tags.append("spo2:{}".format(parsed_response))
         return current_variables
 
 
@@ -73,7 +80,7 @@ flow_config = {
             "parser_parameters": {
                 "allowed_responses": resources
             },
-            "parser_output_handler": ChatVariables.parse_welcome_response
+            "parser_output_handler": ChatVariables.store_welcome_response
         },
         "welcome_failure": {
             "inherit_step": "welcome",
@@ -82,11 +89,15 @@ flow_config = {
         },
         "city": {
             "message": city_message,
-            "allowed_parsers": [parsers.match_response_as_place_name_in_india]
+            "allowed_parsers": [parsers.match_response_as_place_name_in_india],
+            "success_state": "spo2",
+            "failure_state": "spo2",
         },
         "spo2": {
             "message": spo2_message,
-            "allowed_parsers": []
+            "allowed_parsers": [parsers.match_response_as_spo2_level],
+            "parser_output_handler": ChatVariables.store_spo2_response,
+            "failure_state": "spo2",
         }
     },
     "chat_variables_class": ChatVariables,
