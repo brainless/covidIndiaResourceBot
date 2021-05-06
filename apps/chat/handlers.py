@@ -3,10 +3,10 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, BackgroundTasks, status
 
 from utils.cache import redis, get_redis
-from .schema import ChatIn, ChatOut, ChatReset
+from .schema import ChatIn, ChatReset
 from .flow import get_next_message
 from .state import get_chat_state_and_variables, set_chat_state, delete_chat_state
-from .tpf_flow import flow_config
+from chat_configurations.tpf_flow import flow_config
 
 
 chat_router = APIRouter()

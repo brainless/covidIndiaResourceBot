@@ -1,7 +1,7 @@
 from typing import Optional, List
 
-from . import parsers
-from .state import Cacheable
+from apps.chat import parsers
+from apps.chat.state import Cacheable
 
 
 class ChatVariables(Cacheable):
@@ -81,7 +81,7 @@ flow_config = {
         },
         "city": {
             "message": city_message,
-            "allowed_parsers": []
+            "allowed_parsers": [parsers.match_response_as_place_name_in_india]
         },
         "spo2": {
             "message": spo2_message,
