@@ -5,11 +5,13 @@ from apps.chat.state import ChatState
 
 def get_next_message(
         config: dict,
+        created_by: str,
         current_message: Optional[str],
         chat_state: ChatState
 ):
     response_message = None
-    if chat_state.operator_has_replied:
+    if chat_state.operator_has_replied or created_by == "operator":
+        chat_state.operator_has_replied = True
         return response_message, chat_state
 
     if chat_state.current_step is None:

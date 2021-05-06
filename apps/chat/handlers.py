@@ -22,8 +22,9 @@ async def handle_incoming_chat(
         cache=cache
     )
     next_message, updated_chat_state = get_next_message(
-        current_message=data.message,
         config=flow_config,
+        current_message=data.message,
+        created_by=data.created_by,
         chat_state=chat_state
     )
     bg_tasks.add_task(set_chat_state, data.phone, updated_chat_state, cache)
