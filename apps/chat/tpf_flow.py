@@ -41,11 +41,16 @@ flow_config = {
         "welcome": {
             "message": welcome_message,
             "allowed_parsers": [parsers.match_response_in_list, parsers.match_response_code_in_list],
-            "success_state": "",
-            "failure_state": "",
+            "success_state": "city",
+            "failure_state": "welcome_failure",
             "variables": {
                 "allowed_responses": resources
             }
+        },
+        "welcome_failure": {
+            "inherit_step": "welcome",
+            "message": "Please select a valid option. Eg. reply 2 for Ambulances.",
+            "max_tries": 3,
         },
         "city": {
             "message": city_message,

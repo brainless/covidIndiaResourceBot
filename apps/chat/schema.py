@@ -18,7 +18,7 @@ class ChatIn(BaseModel):
 
 class ChatOut(BaseModel):
     phone: str
-    message: str
+    message: Optional[str]
     tags: Optional[List[str]]
     team: Optional[str]
     close_chat: Optional[bool]

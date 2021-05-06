@@ -1,59 +1,11 @@
-from datetime import datetime
-import orjson as json
 from typing import Optional
 
-from utils.cache import redis
-
-
-class ChatState(object):
-    current_step: Optional[str]
-    has_sent_current_step_message: bool
-    looking_for: Optional[str]
-    location: Optional[str]
-    spo2_level: Optional[int]
-    operator_has_replied: Optional[bool]
-    last_response_at: Optional[datetime]
-
-    def __init__(self):
-        self.current_step = None
-        self.has_sent_current_step_message = False
-        self.looking_for = None
-        self.looking_for = None
-        self.spo2_level = None
-        self.operator_has_replied = False
-        self.last_response_at = None
-
-    def dumps(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    @classmethod
-    def loads(cls, data: str):
-        data = json.loads(data)
-        chat_state = ChatState()
-        for key, val in data.items():
-            setattr(chat_state, key, val)
-
-        return chat_state
-
-
-async def get_chat_state(phone_number: str, cache: redis) -> ChatState:
-    chat_state = await cache.get(phone_number)
-
-    if chat_state is None:
-        chat_state = ChatState()
-    else:
-        chat_state = ChatState.loads(chat_state)
-
-    return chat_state
-
-
-async def set_chat_state(phone_number: str, chat_state: ChatState, cache: redis):
-    await cache.set(phone_number, chat_state.dumps())
+from apps.chat.state import ChatState
 
 
 def get_next_message(
-        current_message: str,
         config: dict,
+        current_message: Optional[str],
         chat_state: ChatState
 ):
     response_message = None
@@ -64,14 +16,47 @@ def get_next_message(
         chat_state.current_step = config["start_at"]
 
     step_config = config["steps"][chat_state.current_step]
+    if "inherit_step" in step_config:
+        parent_step_config = config["steps"][step_config["inherit_step"]]
+        step_config = {
+            **parent_step_config,
+            **step_config,
+        }
 
-    if not chat_state.has_sent_current_step_message:
+    if chat_state.has_sent_current_step_message:
+        # We have sent out the message for the current step
+        # We now expect a response from user, so lets run parsers and see if we find a valid response
+        is_successful = False
+        for message_parser in step_config["allowed_parsers"]:
+            try:
+                message_parser(current_message, **step_config["variables"])
+                # Found a valid response, move the step to success
+                is_successful = True
+                chat_state.current_step = step_config["success_state"]
+                break
+            except ValueError:
+                # We do not do anything when any one parser fails, just ignore and try next
+                pass
+
+        if not is_successful:
+            # We tried all parsers, none worked so we are in failure step of the current step
+            chat_state.current_step = step_config["failure_state"]
+
+        # Let's start over, but with the success or failed step
+        # This will simply send out the message
+        chat_state.has_sent_current_step_message = False
+        response_message, chat_state = get_next_message(
+            config=config,
+            current_message=None,
+            chat_state=chat_state
+        )
+    else:
+        # We have not sent out the message configured for this current step, let's send it out
         response_message = step_config["message"]
-
-    for message_parser in step_config["allowed_parsers"]:
-        try:
-            message_parser(current_message, **step_config["variables"])
-        except ValueError:
-            pass
+        if "max_tries" in step_config:
+            if chat_state.tried_this_step >= step_config["max_tries"]:
+                response_message = None
+        chat_state.has_sent_current_step_message = True
+        chat_state.tried_this_step = chat_state.tried_this_step + 1
 
     return response_message, chat_state

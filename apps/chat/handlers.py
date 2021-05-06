@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 
 from utils.cache import redis, get_redis
 from .schema import ChatIn, ChatOut
-from .flow import get_chat_state, get_next_message, set_chat_state
+from .flow import get_next_message
+from .state import get_chat_state, set_chat_state
 from .tpf_flow import flow_config
 
 
