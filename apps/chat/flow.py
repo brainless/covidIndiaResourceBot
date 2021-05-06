@@ -1,25 +1,26 @@
 from typing import Optional
 
-from apps.chat.state import ChatState
+from apps.chat.state import ChatState, Cacheable
 
 
 def get_next_message(
-        config: dict,
+        flow_config: dict,
         created_by: str,
         current_message: Optional[str],
-        chat_state: ChatState
-):
+        chat_state: ChatState,
+        chat_variables: Cacheable
+) -> [Optional[str], ChatState]:
     response_message = None
-    if chat_state.operator_has_replied or created_by == "operator":
-        chat_state.operator_has_replied = True
+    if chat_state.has_operator_replied or created_by == "operator":
+        chat_state.has_operator_replied = True
         return response_message, chat_state
 
     if chat_state.current_step is None:
-        chat_state.current_step = config["start_at"]
+        chat_state.current_step = flow_config["start_at"]
 
-    step_config = config["steps"][chat_state.current_step]
+    step_config = flow_config["steps"][chat_state.current_step]
     if "inherit_step" in step_config:
-        parent_step_config = config["steps"][step_config["inherit_step"]]
+        parent_step_config = flow_config["steps"][step_config["inherit_step"]]
         step_config = {
             **parent_step_config,
             **step_config,
@@ -31,9 +32,14 @@ def get_next_message(
         is_successful = False
         for message_parser in step_config["allowed_parsers"]:
             try:
-                message_parser(current_message, **step_config["variables"])
+                if "parser_parameters" in step_config:
+                    parser_output = message_parser(current_message, **step_config["parser_parameters"])
+                else:
+                    parser_output = message_parser(current_message)
                 # Found a valid response, move the step to success
                 is_successful = True
+                if "parser_output_handler" in step_config and "chat_variables_class" in flow_config:
+                    step_config["parser_output_handler"](chat_variables, parser_output)
                 break
             except ValueError:
                 # We do not do anything when any one parser fails, just ignore and try next
@@ -59,10 +65,11 @@ def get_next_message(
             # This will simply send out the message
             chat_state.has_sent_current_step_message = False
             response_message, chat_state = get_next_message(
-                config=config,
+                flow_config=flow_config,
                 created_by=created_by,
                 current_message=None,
-                chat_state=chat_state
+                chat_state=chat_state,
+                chat_variables=chat_variables
             )
     else:
         # We have not sent out the message configured for this current step, let's send it out

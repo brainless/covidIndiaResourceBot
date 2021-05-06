@@ -1,4 +1,30 @@
+from typing import Optional, List
+
 from . import parsers
+from .state import Cacheable
+
+
+class ChatVariables(Cacheable):
+    looking_for: Optional[str]
+    location: Optional[str]
+    spo2_level: Optional[int]
+    team: Optional[str]
+    tags: Optional[List[str]]
+
+    def __init__(self):
+        self.looking_for = None
+        self.location = None
+        self.spo2_level = None
+        self.team = None
+        self.tags = []
+
+    @classmethod
+    def parse_welcome_response(cls, current_variables, parsed_response):
+        if cls.__name__ == "ChatVariables":
+            current_variables.team = parsed_response
+            current_variables.tags.append(parsed_response)
+        return current_variables
+
 
 resources = [
     "Blood banks",
@@ -43,9 +69,10 @@ flow_config = {
             "allowed_parsers": [parsers.match_response_in_list, parsers.match_response_code_in_list],
             "success_state": "city",
             "failure_state": "welcome_failure",
-            "variables": {
+            "parser_parameters": {
                 "allowed_responses": resources
-            }
+            },
+            "parser_output_handler": ChatVariables.parse_welcome_response
         },
         "welcome_failure": {
             "inherit_step": "welcome",
@@ -61,5 +88,6 @@ flow_config = {
             "allowed_parsers": []
         }
     },
+    "chat_variables_class": ChatVariables,
     "start_at": "welcome"
 }

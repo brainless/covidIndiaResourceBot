@@ -1,10 +1,11 @@
 from typing import Mapping
+from datetime import datetime
 from fastapi import APIRouter, Depends, BackgroundTasks, status
 
 from utils.cache import redis, get_redis
 from .schema import ChatIn, ChatOut, ChatReset
 from .flow import get_next_message
-from .state import get_chat_state, set_chat_state, delete_chat_state
+from .state import get_chat_state_and_variables, set_chat_state, delete_chat_state
 from .tpf_flow import flow_config
 
 
@@ -22,32 +23,35 @@ async def handle_incoming_chat(
     )
 
     return {
-        "status": "Deleted"
+        "status": "deleted"
     }
 
 
-@chat_router.post("", response_model=ChatOut)
+@chat_router.post("")
 async def handle_incoming_chat(
         data: ChatIn,
         bg_tasks: BackgroundTasks,
         cache: redis = Depends(get_redis)
 ) -> Mapping:
-    chat_state = await get_chat_state(
+    chat_state, chat_variables = await get_chat_state_and_variables(
         phone_number=data.phone,
-        cache=cache
+        cache=cache,
+        flow_config=flow_config
     )
+
     next_message, updated_chat_state = get_next_message(
-        config=flow_config,
-        current_message=data.message,
+        flow_config=flow_config,
         created_by=data.created_by,
-        chat_state=chat_state
+        current_message=data.message,
+        chat_state=chat_state,
+        chat_variables=chat_variables
     )
+    updated_chat_state.last_response_at = datetime.utcnow()
     bg_tasks.add_task(set_chat_state, data.phone, updated_chat_state, cache)
 
     return {
         "phone": data.phone,
         "message": next_message,
-        "team": None,
-        "tags": [],
-        "close_chat": False
+        "close_chat": False,
+        **chat_variables.to_dict()
     }
