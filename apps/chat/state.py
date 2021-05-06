@@ -47,3 +47,7 @@ async def get_chat_state(phone_number: str, cache: redis) -> ChatState:
 
 async def set_chat_state(phone_number: str, chat_state: ChatState, cache: redis):
     await cache.set(phone_number, chat_state.dumps())
+
+
+async def delete_chat_state(phone_number: str, cache: redis):
+    await cache.delete(phone_number)

@@ -2,13 +2,24 @@ from typing import Mapping
 from fastapi import APIRouter, Depends, BackgroundTasks
 
 from utils.cache import redis, get_redis
-from .schema import ChatIn, ChatOut
+from .schema import ChatIn, ChatOut, ChatReset
 from .flow import get_next_message
-from .state import get_chat_state, set_chat_state
+from .state import get_chat_state, set_chat_state, delete_chat_state
 from .tpf_flow import flow_config
 
 
 chat_router = APIRouter()
+
+
+@chat_router.post("/reset")
+async def handle_incoming_chat(
+        data: ChatReset,
+        cache: redis = Depends(get_redis)
+):
+    await delete_chat_state(
+        phone_number=data.phone,
+        cache=cache
+    )
 
 
 @chat_router.post("", response_model=ChatOut)

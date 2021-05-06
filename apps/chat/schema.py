@@ -22,3 +22,7 @@ class ChatOut(BaseModel):
     tags: Optional[List[str]]
     team: Optional[str]
     close_chat: Optional[bool]
+
+
+class ChatReset(BaseModel):
+    phone: str
