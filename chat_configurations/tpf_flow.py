@@ -23,14 +23,18 @@ class ChatVariables(Cacheable):
         if cls.__name__ == "ChatVariables":
             current_variables.looking_for = parsed_response
             current_variables.team = parsed_response
-            current_variables.tags.append(parsed_response)
+            tags = set(current_variables.tags)
+            tags.add(parsed_response)
+            current_variables.tags = list(tags)
         return current_variables
 
     @classmethod
     def store_spo2_response(cls, current_variables: "ChatVariables", parsed_response):
         if cls.__name__ == "ChatVariables":
             current_variables.spo2_level = parsed_response
-            current_variables.tags.append("spo2:{}".format(parsed_response))
+            tags = set(current_variables.tags)
+            tags.add("spo2:{}".format(parsed_response))
+            current_variables.tags = list(tags)
         return current_variables
 
 
@@ -75,6 +79,9 @@ The SPO2 is the Oxygen saturation level as provided by the Doctor.
 Can you please share the SPO2 number?
 """
 
+volunteer_message = """Please give us 2 minutes to get back to you within this chat
+"""
+
 flow_config = {
     "steps": {
         "welcome": {
@@ -103,12 +110,16 @@ flow_config = {
             "message": spo2_message,
             "allowed_parsers": [parsers.match_response_as_spo2_level],
             "parser_output_handler": ChatVariables.store_spo2_response,
+            "success_step": "volunteer",
             "failure_step": "spo2_failure",
             "max_tries": 2,
         },
         "spo2_failure": {
             "inherit_step": "spo2",
             "message": spo2_failure_message
+        },
+        "volunteer": {
+            "message": volunteer_message,
         }
     },
     "chat_variables_class": ChatVariables,

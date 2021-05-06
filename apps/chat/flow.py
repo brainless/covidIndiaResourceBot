@@ -30,20 +30,21 @@ def get_next_message(
         # We have sent out the message for the current step
         # We now expect a response from user, so lets run parsers and see if we find a valid response
         is_successful = False
-        for message_parser in step_config["allowed_parsers"]:
-            try:
-                if "parser_parameters" in step_config:
-                    parser_output = message_parser(current_message, **step_config["parser_parameters"])
-                else:
-                    parser_output = message_parser(current_message)
-                # Found a valid response, move the step to success
-                is_successful = True
-                if "parser_output_handler" in step_config and "chat_variables_class" in flow_config:
-                    step_config["parser_output_handler"](chat_variables, parser_output)
-                break
-            except ValueError:
-                # We do not do anything when any one parser fails, just ignore and try next
-                pass
+        if "allowed_parsers" in step_config:
+            for message_parser in step_config["allowed_parsers"]:
+                try:
+                    if "parser_parameters" in step_config:
+                        parser_output = message_parser(current_message, **step_config["parser_parameters"])
+                    else:
+                        parser_output = message_parser(current_message)
+                    # Found a valid response, move the step to success
+                    is_successful = True
+                    if "parser_output_handler" in step_config and "chat_variables_class" in flow_config:
+                        step_config["parser_output_handler"](chat_variables, parser_output)
+                    break
+                except ValueError:
+                    # We do not do anything when any one parser fails, just ignore and try next
+                    pass
 
         can_move_step = False
         if is_successful:

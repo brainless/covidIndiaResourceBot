@@ -31,7 +31,7 @@ def match_response_as_place_name_in_india(message: str):
 
 def match_response_as_spo2_level(message: str):
     try:
-        spo2_level = float(message)
+        spo2_level = int(message)
         return spo2_level
     except ValueError:
         pass
