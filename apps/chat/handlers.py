@@ -1,5 +1,5 @@
 from typing import Mapping
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, status
 
 from utils.cache import redis, get_redis
 from .schema import ChatIn, ChatOut, ChatReset
@@ -11,15 +11,19 @@ from .tpf_flow import flow_config
 chat_router = APIRouter()
 
 
-@chat_router.post("/reset")
+@chat_router.delete("", status_code=status.HTTP_200_OK)
 async def handle_incoming_chat(
         data: ChatReset,
         cache: redis = Depends(get_redis)
-):
+) -> Mapping:
     await delete_chat_state(
         phone_number=data.phone,
         cache=cache
     )
+
+    return {
+        "status": "Deleted"
+    }
 
 
 @chat_router.post("", response_model=ChatOut)

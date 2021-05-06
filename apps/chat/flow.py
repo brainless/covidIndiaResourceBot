@@ -60,6 +60,7 @@ def get_next_message(
             chat_state.has_sent_current_step_message = False
             response_message, chat_state = get_next_message(
                 config=config,
+                created_by=created_by,
                 current_message=None,
                 chat_state=chat_state
             )
