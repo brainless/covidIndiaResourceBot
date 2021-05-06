@@ -21,6 +21,7 @@ class ChatVariables(Cacheable):
     @classmethod
     def parse_welcome_response(cls, current_variables, parsed_response):
         if cls.__name__ == "ChatVariables":
+            current_variables.looking_for = parsed_response
             current_variables.team = parsed_response
             current_variables.tags.append(parsed_response)
         return current_variables

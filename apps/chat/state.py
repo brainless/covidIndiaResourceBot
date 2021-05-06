@@ -45,7 +45,7 @@ async def get_chat_state_and_variables(
         flow_config: dict
 ) -> [ChatState, Cacheable]:
     chat_state_cached = await cache.get(phone_number)
-    chat_state_dict = json.loads(chat_state_cached)
+
     chat_state = ChatState()
     if "chat_variables_class" in flow_config:
         chat_variables = flow_config["chat_variables_class"]()
@@ -53,6 +53,7 @@ async def get_chat_state_and_variables(
         chat_variables = Cacheable()
 
     if chat_state_cached is not None:
+        chat_state_dict = json.loads(chat_state_cached)
         chat_state.loads(chat_state_cached)
 
         if "variables" in chat_state_dict:
