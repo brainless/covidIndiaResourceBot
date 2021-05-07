@@ -46,8 +46,8 @@ resources = [
     "Medicines",
     "Oxygen",
     "Beds",
-    "Food",
     "Consultation"
+    "Food",
     "Mental Health",
     "Vaccine",
     "Regional PoCs",
@@ -63,7 +63,7 @@ welcome_message = """Hey, thank you for reaching. Can you please tell me what yo
 
 {}
 
-Just press the number, 1 to 13
+Just press the number, 1 to 12
 """.format(get_resources_list())
 
 city_message = """Thank you.
