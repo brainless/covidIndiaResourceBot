@@ -2,7 +2,7 @@
 - name: Setup project with Git, copy configuration files, run app server
 
   # Specify the hosts you want to target
-  hosts: webserver
+  hosts: backend
 
   remote_user: team
 

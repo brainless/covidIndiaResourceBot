@@ -2,7 +2,7 @@
 - name: Pulling from git and starting the gunicorn
 
   # Specify the hosts you want to target
-  hosts: webserver
+  hosts: backend
 
   remote_user: team
 

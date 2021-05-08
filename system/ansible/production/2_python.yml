@@ -2,7 +2,7 @@
 - name: Setup pip3, virtualenv
 
   # Specify the hosts you want to target
-  hosts: webserver
+  hosts: backend
 
   remote_user: team
 

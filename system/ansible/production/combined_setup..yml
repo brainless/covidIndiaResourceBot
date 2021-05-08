@@ -1,3 +1,5 @@
+# - import_playbook: 1_do_base.yml
 - import_playbook: 2_python.yml
-- import_playbook: 3_webserver.yml
+- import_playbook: 3a_nginx.yml
+- import_playbook: 3b_redis.yml
 - import_playbook: 4_project.yml

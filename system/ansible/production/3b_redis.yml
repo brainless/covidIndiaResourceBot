@@ -1,13 +1,13 @@
 ---
-- name: Setup nginx and firewall settings on a Debian 10 host
+- name: Setup redis-server and firewall settings on a Debian host
 
   # Specify the hosts you want to target
-  hosts: webserver
+  hosts: redis
 
   remote_user: team
 
   vars:
-    system_packages: ["nginx"]
+    system_packages: ["redis-server"]
 
   tasks:
     - name: Update apt
@@ -20,30 +20,25 @@
       become_user: root
       apt: name={{ system_packages }} state=latest
 
-    - name: UFW - Allow HTTP connections
+    - name: UFW - Allow Redis connections
       become: yes
       become_user: root
       ufw:
         rule: allow
-        name: Nginx HTTP
+        port: 6379
+        proto: tcp
+        src: 10.122.0.0/20
 
-    - name: UFW - Allow HTTPS connections
-      become: yes
-      become_user: root
-      ufw:
-        rule: allow
-        name: Nginx HTTPS
-
-    - name: Enable nginx to start on boot
+    - name: Enable redis-server to start on boot
       become: yes
       become_user: root
       systemd:
-        name: nginx
+        name: redis-server
         enabled: yes
 
-    - name: Start nginx server
+    - name: Start redis-server server
       become: yes
       become_user: root
       systemd:
-        name: nginx
+        name: redis-server
         state: started
