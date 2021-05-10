@@ -19,14 +19,14 @@ class ChatState(Cacheable):
     current_step: Optional[str]
     has_sent_current_step_message: bool
     has_operator_replied: Optional[bool]
-    tried_this_step: 0
+    failures_count: 0
     last_response_at: Optional[datetime]
 
     def __init__(self):
         self.current_step = None
         self.has_sent_current_step_message = False
         self.has_operator_replied = False
-        self.tried_this_step = 0
+        self.failures_count = 0
         self.last_response_at = None
 
     def to_dict(self):

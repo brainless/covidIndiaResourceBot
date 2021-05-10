@@ -87,7 +87,8 @@ def get_resources_list():
     return "\n".join(["{} {}".format(index + 1, x) for index, x in enumerate(resources)])
 
 
-welcome_message = """Hey, thank you for reaching. Can you please tell me what you are looking for from below options?
+welcome_message = """Hey, 
+Please select your requirement from the options below so that we can direct you to the volunteer that can help you most:
 
 {}
 
@@ -125,7 +126,6 @@ flow_config = {
                 "allowed_responses": resources
             },
             "parser_output_handler": ChatVariables.store_welcome_response,
-            "max_tries": 3,
         },
         "welcome_failure": {
             "inherit_step": "welcome",
@@ -136,7 +136,6 @@ flow_config = {
             "allowed_parsers": [parsers.match_response_as_place_name_in_india],
             "success_step": "spo2",
             "failure_step": "spo2",
-            "max_tries": 3,
         },
         "spo2": {
             "message": spo2_message,
@@ -146,7 +145,6 @@ flow_config = {
             "success_step": "volunteer",
             "failure_step": "spo2_failure",
             "skip_step": "volunteer",
-            "max_tries": 2,
         },
         "spo2_failure": {
             "inherit_step": "spo2",
@@ -158,5 +156,6 @@ flow_config = {
         }
     },
     "chat_variables_class": ChatVariables,
+    "max_failures": 2,
     "start_at": "welcome"
 }
