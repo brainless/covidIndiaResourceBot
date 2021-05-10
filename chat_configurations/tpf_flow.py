@@ -4,6 +4,28 @@ from apps.chat import parsers
 from apps.chat.state import Cacheable
 
 
+resources_need_spo2 = [
+    "Blood banks",
+    "Ambulances",
+    "Helplines",
+    "Plasma",
+    "Medicines",
+    "Oxygen",
+    "Beds",
+]
+
+resources_dont_need_spo2 = [
+    "Consultation"
+    "Food",
+    "Mental Health",
+    "Vaccine",
+    "Regional PoCs",
+    "Something else"
+]
+
+resources = resources_need_spo2 + resources_dont_need_spo2
+
+
 class ChatVariables(Cacheable):
     looking_for: Optional[str]
     location: Optional[str]
@@ -20,39 +42,45 @@ class ChatVariables(Cacheable):
 
     @classmethod
     def store_welcome_response(cls, current_variables: "ChatVariables", parsed_response):
-        if cls.__name__ == "ChatVariables":
+        if cls.__name__ == "ChatVariables" and parsed_response:
             current_variables.looking_for = parsed_response
-            current_variables.team = parsed_response
             tags = set(current_variables.tags)
             tags.add(parsed_response)
             current_variables.tags = list(tags)
         return current_variables
 
     @classmethod
-    def store_spo2_response(cls, current_variables: "ChatVariables", parsed_response):
+    def skip_spo2_step(cls, current_variables: "ChatVariables"):
         if cls.__name__ == "ChatVariables":
+            if current_variables.looking_for in resources_dont_need_spo2:
+                return True
+        return False
+
+    @classmethod
+    def store_spo2_response(cls, current_variables: "ChatVariables", parsed_response):
+        if cls.__name__ == "ChatVariables" and parsed_response:
             current_variables.spo2_level = parsed_response
             tags = set(current_variables.tags)
-            tags.add("spo2:{}".format(parsed_response))
+            spo2_tag = ""
+            if parsed_response >= 95:
+                spo2_tag = "normal"
+            elif parsed_response >= 92:
+                spo2_tag = "medium"
+            elif parsed_response >= 86:
+                spo2_tag = "low"
+            elif parsed_response >= 80:
+                spo2_tag = "needs-care"
+            else:
+                spo2_tag = "critical"
+            tags.add("spo2:{}".format(spo2_tag))
             current_variables.tags = list(tags)
         return current_variables
 
-
-resources = [
-    "Blood banks",
-    "Ambulances",
-    "Helplines",
-    "Plasma",
-    "Medicines",
-    "Oxygen",
-    "Beds",
-    "Consultation"
-    "Food",
-    "Mental Health",
-    "Vaccine",
-    "Regional PoCs",
-    "Something else"
-]
+    @classmethod
+    def set_team(cls, current_variables: "ChatVariables"):
+        if cls.__name__ == "ChatVariables":
+            current_variables.team = "Default"
+        return current_variables
 
 
 def get_resources_list():
@@ -86,7 +114,11 @@ flow_config = {
     "steps": {
         "welcome": {
             "message": welcome_message,
-            "allowed_parsers": [parsers.match_response_in_list, parsers.match_response_code_in_list],
+            "allowed_parsers": [
+                parsers.match_response_code_in_list,
+                parsers.match_response_in_list,
+                parsers.fuzzy_match_response_in_list
+            ],
             "success_step": "city",
             "failure_step": "welcome_failure",
             "parser_parameters": {
@@ -108,10 +140,12 @@ flow_config = {
         },
         "spo2": {
             "message": spo2_message,
+            "skip_step_condition": ChatVariables.skip_spo2_step,
             "allowed_parsers": [parsers.match_response_as_spo2_level],
             "parser_output_handler": ChatVariables.store_spo2_response,
             "success_step": "volunteer",
             "failure_step": "spo2_failure",
+            "skip_step": "volunteer",
             "max_tries": 2,
         },
         "spo2_failure": {
@@ -120,6 +154,7 @@ flow_config = {
         },
         "volunteer": {
             "message": volunteer_message,
+            "pre_message": ChatVariables.set_team,
         }
     },
     "chat_variables_class": ChatVariables,

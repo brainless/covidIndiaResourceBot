@@ -39,15 +39,15 @@ async def handle_incoming_chat(
         flow_config=flow_config
     )
 
-    next_message, updated_chat_state = get_next_message(
+    next_message, chat_state, chat_variables = get_next_message(
         flow_config=flow_config,
         created_by=data.created_by,
         current_message=data.message,
         chat_state=chat_state,
         chat_variables=chat_variables
     )
-    updated_chat_state.last_response_at = datetime.utcnow()
-    bg_tasks.add_task(set_chat_state, data.phone, updated_chat_state, chat_variables, cache)
+    chat_state.last_response_at = datetime.utcnow()
+    bg_tasks.add_task(set_chat_state, data.phone, chat_state, chat_variables, cache)
 
     return {
         "phone": data.phone,

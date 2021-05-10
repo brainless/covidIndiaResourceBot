@@ -9,7 +9,7 @@ def get_next_message(
         current_message: Optional[str],
         chat_state: ChatState,
         chat_variables: Cacheable
-) -> [Optional[str], ChatState]:
+) -> [Optional[str], ChatState, Cacheable]:
     response_message = None
     if chat_state.has_operator_replied or created_by == "operator":
         chat_state.has_operator_replied = True
@@ -40,7 +40,7 @@ def get_next_message(
                     # Found a valid response, move the step to success
                     is_successful = True
                     if "parser_output_handler" in step_config and "chat_variables_class" in flow_config:
-                        step_config["parser_output_handler"](chat_variables, parser_output)
+                        chat_variables = step_config["parser_output_handler"](chat_variables, parser_output)
                     break
                 except ValueError:
                     # We do not do anything when any one parser fails, just ignore and try next
@@ -65,7 +65,7 @@ def get_next_message(
             # Let's start over, but with the success or failed step
             # This will simply send out the message
             chat_state.has_sent_current_step_message = False
-            response_message, chat_state = get_next_message(
+            response_message, chat_state, chat_variables = get_next_message(
                 flow_config=flow_config,
                 created_by=created_by,
                 current_message=None,
@@ -74,7 +74,26 @@ def get_next_message(
             )
     else:
         # We have not sent out the message configured for this current step, let's send it out
-        response_message = step_config["message"]
+        is_skipped = False
+        if "skip_step_condition" in step_config and "skip_step" in step_config:
+            # A step condition means we need to check if we are allowed to run this step on not
+            if step_config["skip_step_condition"](chat_variables):
+                chat_state.current_step = step_config["skip_step"]
+                chat_state.has_sent_current_step_message = False
+                response_message, chat_state, chat_variables = get_next_message(
+                    flow_config=flow_config,
+                    created_by=created_by,
+                    current_message=None,
+                    chat_state=chat_state,
+                    chat_variables=chat_variables
+                )
+                is_skipped = True
+
+        if not is_skipped:
+            response_message = step_config["message"]
+            if "pre_message" in step_config and "chat_variables_class" in flow_config:
+                chat_variables = step_config["pre_message"](chat_variables)
+
         """
         if "max_tries" in step_config:
             if chat_state.tried_this_step >= step_config["max_tries"]:
@@ -83,4 +102,4 @@ def get_next_message(
         chat_state.has_sent_current_step_message = True
         chat_state.tried_this_step = chat_state.tried_this_step + 1
 
-    return response_message, chat_state
+    return response_message, chat_state, chat_variables
