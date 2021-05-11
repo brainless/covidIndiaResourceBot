@@ -1,6 +1,7 @@
 from typing import Optional
 
-from apps.chat.state import ChatState, Cacheable
+from .state import ChatState, Cacheable
+from .schema import CreatedByEnum
 
 
 def get_next_message(
@@ -11,9 +12,9 @@ def get_next_message(
         chat_variables: Cacheable
 ) -> [Optional[str], ChatState, Cacheable]:
     response_message = None
-    if chat_state.has_operator_replied or created_by == "operator":
+    if chat_state.has_operator_replied or created_by == CreatedByEnum.operator:
         chat_state.has_operator_replied = True
-        return response_message, chat_state
+        return response_message, chat_state, chat_variables
 
     if chat_state.current_step is None:
         chat_state.current_step = flow_config["start_at"]
