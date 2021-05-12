@@ -8,13 +8,13 @@ resources_need_spo2 = [
     "Blood banks",
     "Ambulances",
     "Helplines",
-    "Plasma",
     "Medicines",
     "Oxygen",
     "Beds",
 ]
 
 resources_dont_need_spo2 = [
+    "Plasma",
     "Consultation"
     "Food",
     "Mental Health",
@@ -77,6 +77,25 @@ class ChatVariables(Cacheable):
         return current_variables
 
     @classmethod
+    def skip_blood_group_step(cls, current_variables: "ChatVariables"):
+        if cls.__name__ == "ChatVariables":
+            if current_variables.looking_for == "Plasma":
+                return False
+        return True
+
+    @classmethod
+    def store_blood_group_response(cls, current_variables: "ChatVariables", parsed_response: str):
+        if cls.__name__ == "ChatVariables" and parsed_response:
+            base_groups = ["A", "B", "AB", "O"]
+            groups = ["{}+".format(x) for x in base_groups] + ["{}-".format(x) for x in base_groups]
+
+            if parsed_response.upper() in groups:
+                tags = set(current_variables.tags)
+                tags.add(parsed_response.upper())
+                current_variables.tags = list(tags)
+        return current_variables
+
+    @classmethod
     def set_team(cls, current_variables: "ChatVariables"):
         if cls.__name__ == "ChatVariables":
             current_variables.team = "Default"
@@ -107,6 +126,10 @@ spo2_failure_message = """Sorry I could not understand.
 The SPO2 is the Oxygen saturation level as provided by the Doctor.
 Can you please share the SPO2 number?
 """
+
+blood_group_message = """What is the blood group of the patient? (need it for Plasma information)
+"""
+
 
 volunteer_message = """Please give us 2 minutes to get back to you within this chat
 """
@@ -142,13 +165,21 @@ flow_config = {
             "skip_step_condition": ChatVariables.skip_spo2_step,
             "allowed_parsers": [parsers.match_response_as_spo2_level],
             "parser_output_handler": ChatVariables.store_spo2_response,
-            "success_step": "volunteer",
+            "success_step": "blood_group",
             "failure_step": "spo2_failure",
-            "skip_step": "volunteer",
+            "skip_step": "blood_group",
         },
         "spo2_failure": {
             "inherit_step": "spo2",
             "message": spo2_failure_message
+        },
+        "blood_group": {
+            "message": blood_group_message,
+            "skip_step_condition": ChatVariables.skip_blood_group_step,
+            "allowed_parsers": [parsers.match_response_as_string],
+            "parser_output_handler": ChatVariables.store_blood_group_response,
+            "success_step": "volunteer",
+            "failure_step": "volunteer",
         },
         "volunteer": {
             "message": volunteer_message,

@@ -53,3 +53,7 @@ def match_response_as_spo2_level(message: str):
         pass
 
     raise ValueError
+
+
+def match_response_as_string(message: str) -> str:
+    return message
