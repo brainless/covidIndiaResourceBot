@@ -5,15 +5,15 @@ from apps.chat.state import Cacheable
 
 
 resources_need_spo2 = [
-    "Blood banks",
     "Ambulances",
-    "Helplines",
-    "Medicines",
     "Oxygen",
     "Beds",
 ]
 
 resources_dont_need_spo2 = [
+    "Blood banks",
+    "Helplines",
+    "Medicines",
     "Plasma",
     "Consultation"
     "Food",
@@ -180,6 +180,7 @@ flow_config = {
             "parser_output_handler": ChatVariables.store_blood_group_response,
             "success_step": "volunteer",
             "failure_step": "volunteer",
+            "skip_step": "volunteer",
         },
         "volunteer": {
             "message": volunteer_message,
